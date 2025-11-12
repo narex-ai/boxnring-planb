@@ -244,6 +244,28 @@ To test the backend locally:
 3. Send a test message from the frontend
 4. Check logs for Glovy's processing and response
 
+## Deployment (Railway)
+
+Automate deployments by connecting this repository to a Railway project:
+
+1. **Create the service**  
+   - Sign in to Railway and create a new project.  
+   - Select **Deploy from GitHub** and choose this repository. Railway will detect the `railway.json` file and apply the build plan automatically.
+
+2. **Configure environment variables**  
+   Set the required variables in Railway → Project → Variables:  
+   `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (optional), `GOOGLE_API_KEY`, `GOOGLE_MODEL`, `MEM0_API_KEY` (optional), `GLOVY_PERSONA`, `GLOVY_RESPONSE_THRESHOLD`, `GLOVY_MIN_MESSAGES_BEFORE_RESPONSE`, `ENVIRONMENT`.  
+   Railway automatically injects `PORT`; no manual change needed.
+
+3. **Automatic builds & deploys**  
+   On each main branch push, Railway will:  
+   - Install dependencies via `pip install -r requirements.txt`.  
+   - Start the API with `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.  
+   - Run health checks against `/api/v1/health`. Deployments roll back if the check fails.
+
+4. **Local iteration**  
+   Use the Railway CLI (`railway up`) to trigger builds manually or `railway logs` to tail production logs.
+
 ## Troubleshooting
 
 ### Glovy not responding
