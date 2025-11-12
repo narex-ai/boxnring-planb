@@ -4,7 +4,7 @@ Message processing endpoints.
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
 from typing import Dict, Any
 import logging
-from app.main import get_app_state
+from app.api.v1.dependencies import get_app_state
 
 logger = logging.getLogger(__name__)
 

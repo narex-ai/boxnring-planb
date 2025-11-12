@@ -25,6 +25,7 @@ venv/
 env/
 ENV/
 .venv
+.venv/
 
 # Environment variables
 .env
@@ -50,17 +51,4 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
-
-# Legacy/duplicate files (after restructure)
-# Old files moved to app/ directory structure
-app.py
-config.py
-supabase_client.py
-behavior_detector.py
-tone_analyzer.py
-response_templates.py
-response_timing.py
-glovy_agent.py
-message_processor.py
-main.py
 

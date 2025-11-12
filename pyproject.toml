@@ -1,0 +1,7 @@
+[project]
+name = "couple-spar-chat"
+version = "0.1.0"
+description = "3 Way Chat- AI Coach - Backend - FastAPI - Gemini - mem0 - Langchain - Langraph - RAG"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []

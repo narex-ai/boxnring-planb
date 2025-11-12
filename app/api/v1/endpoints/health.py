@@ -3,7 +3,7 @@ Health check and status endpoints.
 """
 from fastapi import APIRouter, Depends
 from app.core.config import settings
-from app.main import get_app_state
+from app.api.v1.dependencies import get_app_state
 
 router = APIRouter()
 

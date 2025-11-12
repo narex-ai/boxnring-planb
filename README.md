@@ -61,7 +61,7 @@ python setup_env.py
 SUPABASE_URL=your_supabase_url
 SUPABASE_KEY=your_supabase_anon_key
 GOOGLE_API_KEY=your_google_api_key
-GOOGLE_MODEL=gemini-1.5-flash
+GOOGLE_MODEL=gemini-2.5-flash
 MEM0_API_KEY=your_mem0_api_key  # Optional
 ```
 
@@ -190,7 +190,7 @@ supabase
 - `SUPABASE_KEY`: Your Supabase anon key
 - `SUPABASE_SERVICE_ROLE_KEY`: (Optional) Service role key for admin operations
 - `GOOGLE_API_KEY`: Your Google Gemini API key
-- `GOOGLE_MODEL`: Model to use (default: `gemini-1.5-flash`)
+- `GOOGLE_MODEL`: Model to use (default: `gemini-2.5-flash`)
 - `MEM0_API_KEY`: (Optional) Mem0 API key for enhanced memory
 - `GLOVY_PERSONA`: Persona identifier (default: `"glovy"`)
 - `GLOVY_RESPONSE_THRESHOLD`: Minimum tone intensity to respond (0.0-1.0, default: 0.7)
