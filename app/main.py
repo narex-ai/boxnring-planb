@@ -134,13 +134,8 @@ async def lifespan(app: FastAPI):
             except Exception as e:
                 logger.error(f"Error unsubscribing: {e}")
         
-        # Close async client if it exists
-        if hasattr(app.state, 'supabase_async') and app.state.supabase_async:
-            try:
-                await app.state.supabase_async.close()
-                logger.info("Closed async Supabase client")
-            except Exception as e:
-                logger.error(f"Error closing async client: {e}")
+        # Note: Supabase AsyncClient doesn't require explicit closing
+        # The client will be cleaned up automatically when the app shuts down
 
 
 # Create FastAPI app
