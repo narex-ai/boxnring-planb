@@ -29,7 +29,7 @@ class GlovyAgent:
         """Initialize Glovy agent with LLM and memory."""
         self.supabase = supabase_client
         # Use faster model for response generation to meet latency requirements
-        model = getattr(settings, 'glovy_response_model', getattr(settings, 'google_model', 'gemini-1.5-flash'))
+        model = getattr(settings, 'glovy_response_model', getattr(settings, 'google_model', 'gemini-2.5-flash'))
         self.llm = ChatGoogleGenerativeAI(
             model=model,
             temperature=0.8,  # Higher temperature for more creative/witty responses

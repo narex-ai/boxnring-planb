@@ -47,64 +47,68 @@ class MessageProcessor:
                 logger.warning(f"Match {match_id} not found")
                 return None
             
+            invitee = self.supabase.get_profile(match.get("invitee_id"))
+            initiator = self.supabase.get_profile(match.get("initiator_id"))
+            if not invitee or not initiator:
+                logger.warning(f"Invitee or initiator not found for match {match_id}")
+                return None
+
             # Get conversation history
-            conversation_history = self.supabase.get_recent_messages(match_id, limit=20)
+            conversation_history = self.supabase.get_recent_messages(match_id, limit=20, exclude_sender_role="Glovy")
             
-            # Analyze tone
+            # Analyze tone to detect intervention trigger
             logger.info(f"Analyzing tone for message in match {match_id}")
-            tone_analysis = self.tone_analyzer.analyze(
-                message_body=message.get("body", ""),
-                conversation_context=conversation_history
-            )
-            
-            # Check if Glovy should respond
-            should_respond = self.response_timing.should_respond(
-                tone_analysis=tone_analysis,
-                conversation_history=conversation_history,
-                match=match
-            )
-            
-            if not should_respond:
-                logger.info(f"Glovy will not respond to message in match {match_id}")
-                return None
-            
-            # Get profile information
-            initiator_id = match.get("initiator_id")
-            invitee_id = match.get("invitee_id")
-            profiles = self.supabase.get_profiles([initiator_id, invitee_id])
-            
-            # Generate Glovy's response
-            logger.info(f"Generating Glovy response for match {match_id}")
-            response_text = self.glovy_agent.generate_response(
-                match_id=match_id,
-                current_message=message,
-                conversation_history=conversation_history,
+            trigger = self.tone_analyzer.analyze(
                 match=match,
-                profiles=profiles,
-                tone_analysis=tone_analysis
+                initiator=initiator,
+                invitee=invitee,
+                recent_messages=conversation_history,
+                new_message=message
             )
+            logger.info(f"Detected trigger: {trigger}")
             
-            if not response_text:
-                logger.warning("Glovy failed to generate response")
+            # If trigger is "silent", Glovy should not respond
+            if trigger == "silent":
+                logger.info(f"Trigger is 'silent', Glovy will not respond: {message.get('body')}")
                 return None
             
-            # Insert Glovy's response into Supabase
-            glovy_message = self.supabase.insert_message(
-                match_id=match_id,
-                body=response_text,
-                sender_role="Glovy",
-                persona=settings.glovy_persona
-            )
+            # # Get profile information
+            # initiator_id = match.get("initiator_id")
+            # invitee_id = match.get("invitee_id")
+            # profiles = self.supabase.get_profiles([initiator_id, invitee_id])
             
-            if glovy_message:
-                elapsed = time.time() - start_time
-                logger.info(f"Glovy response inserted for match {match_id} in {elapsed:.2f}s")
-                if elapsed > 3.0:
-                    logger.warning(f"Total processing time exceeded 3s: {elapsed:.2f}s")
-                return glovy_message
-            else:
-                logger.error(f"Failed to insert Glovy response for match {match_id}")
-                return None
+            # # Generate Glovy's response
+            # logger.info(f"Generating Glovy response for match {match_id}")
+            # response_text = self.glovy_agent.generate_response(
+            #     match_id=match_id,
+            #     current_message=message,
+            #     conversation_history=conversation_history,
+            #     match=match,
+            #     profiles=profiles,
+            #     tone_analysis=tone_analysis
+            # )
+            
+            # if not response_text:
+            #     logger.warning("Glovy failed to generate response")
+            #     return None
+            
+            # # Insert Glovy's response into Supabase
+            # glovy_message = self.supabase.insert_message(
+            #     match_id=match_id,
+            #     body=response_text,
+            #     sender_role="Glovy",
+            #     persona=settings.glovy_persona
+            # )
+            
+            # if glovy_message:
+            #     elapsed = time.time() - start_time
+            #     logger.info(f"Glovy response inserted for match {match_id} in {elapsed:.2f}s")
+            #     if elapsed > 3.0:
+            #         logger.warning(f"Total processing time exceeded 3s: {elapsed:.2f}s")
+            #     return glovy_message
+            # else:
+            #     logger.error(f"Failed to insert Glovy response for match {match_id}")
+            #     return None
                 
         except Exception as e:
             elapsed = time.time() - start_time

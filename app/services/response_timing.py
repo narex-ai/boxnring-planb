@@ -1,9 +1,11 @@
 """
 Response timing logic to decide when Glovy should interject in conversations.
 Handles phases: pre_match_intro, live, escalation, wrap_up
+
+Note: This module is currently not used but kept for future reference.
+The tone analyzer now returns trigger strings instead of ToneAnalysis objects.
 """
 from typing import Dict, List, Any, Literal
-from app.services.tone_analyzer import ToneAnalysis
 from app.core.config import settings
 import logging
 
@@ -36,15 +38,15 @@ class ResponseTiming:
     
     def should_respond(
         self,
-        tone_analysis: ToneAnalysis,
+        trigger: str,
         conversation_history: List[Dict[str, Any]],
         match: Dict[str, Any]
     ) -> bool:
         """
-        Determine if Glovy should respond based on tone, context, timing, and phase.
+        Determine if Glovy should respond based on trigger, context, timing, and phase.
         
         Args:
-            tone_analysis: Analysis of the current message tone
+            trigger: Trigger string from tone analyzer (e.g., "silent", "contempt_or_insult", etc.)
             conversation_history: Recent messages in the conversation
             match: Match details
             
@@ -53,54 +55,51 @@ class ResponseTiming:
         """
         phase = self.get_match_phase(match)
         
-        # Always respond to severe escalation regardless of phase
-        if hasattr(tone_analysis, 'escalation_tier') and tone_analysis.escalation_tier == "severe":
-            logger.debug("Severe escalation detected - responding immediately")
+        # If trigger is "silent", don't respond
+        if trigger == "silent":
+            logger.debug("Trigger is 'silent' - no response needed")
+            return False
+        
+        # High-priority triggers always require response
+        high_priority_triggers = [
+            "attack_human",
+            "contempt_or_insult",
+            "stonewalling_or_withdrawal",
+            "defensiveness",
+            "direct_request_for_help"
+        ]
+        if trigger in high_priority_triggers:
+            logger.debug(f"High-priority trigger detected: {trigger}")
             return True
         
         # Phase-specific logic
         if phase == "pre_match_intro":
-            # Can respond early in intro phase
-            return tone_analysis.requires_response
+            # Can respond early in intro phase for most triggers
+            return trigger != "silent"
         
         if phase == "wrap_up":
-            # Minimal responses in wrap-up
-            return tone_analysis.response_urgency == "high"
+            # Minimal responses in wrap-up - only high priority
+            return trigger in high_priority_triggers
         
         # Live phase - standard logic
-        # Don't respond if tone analysis says not to
-        if not tone_analysis.requires_response:
-            logger.debug("Tone analysis indicates no response needed")
-            return False
-        
-        # Check minimum message count (skip for high urgency behaviors)
-        behavior = getattr(tone_analysis, 'detected_behavior', 'none')
-        if behavior not in ["interruption", "contempt_or_insult", "stonewalling_or_withdrawal", "escalation"]:
+        # Check minimum message count (skip for high urgency triggers)
+        if trigger not in high_priority_triggers:
             if len(conversation_history) < self.min_messages:
                 logger.debug(f"Not enough messages yet ({len(conversation_history)} < {self.min_messages})")
                 return False
         
-        # Check if Glovy has responded too recently (except for severe escalation)
-        if tone_analysis.response_urgency != "high":
+        # Check if Glovy has responded too recently (except for high priority triggers)
+        if trigger not in high_priority_triggers:
             if self._glovy_responded_recently(conversation_history):
                 logger.debug("Glovy responded recently, skipping")
                 return False
         
-        # Check tone intensity threshold
-        if tone_analysis.intensity < self.response_threshold:
-            # Still respond if urgency is high or specific behaviors detected
-            if tone_analysis.response_urgency == "high" or behavior in ["interruption", "contempt_or_insult", "stonewalling_or_withdrawal"]:
-                logger.debug("High urgency or critical behavior detected, responding")
-                return True
-            logger.debug(f"Tone intensity too low ({tone_analysis.intensity:.2f} < {self.response_threshold})")
-            return False
-        
         # Check for specific scenarios that require response
-        if self._requires_intervention(tone_analysis, conversation_history):
+        if self._requires_intervention(trigger, conversation_history):
             logger.debug("Intervention required based on scenario")
             return True
         
-        # Default: respond if tone analysis says so and intensity is sufficient
+        # Default: respond if trigger is not "silent"
         return True
     
     def _glovy_responded_recently(self, conversation_history: List[Dict[str, Any]], lookback: int = 3) -> bool:
@@ -113,20 +112,30 @@ class ResponseTiming:
     
     def _requires_intervention(
         self,
-        tone_analysis: ToneAnalysis,
+        trigger: str,
         conversation_history: List[Dict[str, Any]]
     ) -> bool:
         """Check if the conversation requires Glovy's intervention."""
-        # High urgency always requires response
-        if tone_analysis.response_urgency == "high":
+        # High-priority triggers always require response
+        high_priority_triggers = [
+            "attack_human",
+            "contempt_or_insult",
+            "stonewalling_or_withdrawal",
+            "defensiveness",
+            "direct_request_for_help"
+        ]
+        if trigger in high_priority_triggers:
             return True
         
-        # Negative tones often need support
-        if tone_analysis.tone in ["negative", "frustrated"] and tone_analysis.intensity > 0.6:
-            return True
-        
-        # Confusion needs clarification
-        if tone_analysis.tone == "confused":
+        # Triggers that indicate conversation issues
+        intervention_triggers = [
+            "stuck_or_looping",
+            "vague_or_abstract",
+            "low_energy_engagement",
+            "invitee_silence",
+            "initiator_silence"
+        ]
+        if trigger in intervention_triggers:
             return True
         
         # Check for conversation stagnation

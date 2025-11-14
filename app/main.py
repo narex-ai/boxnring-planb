@@ -48,29 +48,57 @@ async def lifespan(app: FastAPI):
             settings.supabase_key
         )
         
-        async def on_message_insert(payload: Dict[str, Any]):
-            """Callback for new message events."""
+        def on_message_insert(payload: Dict[str, Any]):
+            """Callback for new message events (async)."""
             try:
-                # Payload structure from Supabase realtime
-                event_type = payload.get("eventType") or payload.get("event_type")
-                if event_type != "INSERT":
+                logger.info(f"on_message_insert called with payload keys: {list(payload.keys())}")
+                
+                # Payload structure from Supabase realtime:
+                # payload = {
+                #     'data': {
+                #         'type': <RealtimePostgresChangesListenEvent.Insert: 'INSERT'>,
+                #         'record': {...actual record data...}
+                #     },
+                #     'ids': [...]
+                # }
+                data = payload.get("data", {})
+                if not data:
+                    logger.warning("Received payload without 'data' field")
                     return
                 
-                new_record = payload.get("new") or payload.get("record")
+                # Type is an enum object, get its value
+                event_type = data.get("type")
+                if event_type is None:
+                    logger.warning("No event type found in payload data")
+                    return
+                
+                # Handle enum - check if it's an enum with .value attribute or string
+                event_type_value = None
+                if hasattr(event_type, 'value'):
+                    event_type_value = event_type.value
+                else:
+                    event_type_value = str(event_type)
+                
+                if event_type_value != "INSERT":
+                    logger.info(f"Event type is not INSERT: {event_type_value}")
+                    return
+                
+                # Get the record from data['record']
+                new_record = data.get("record")
                 if not new_record:
-                    logger.warning("Received INSERT event without new record")
+                    logger.warning("Received INSERT event without record in data")
                     return
                 
                 logger.info(f"New message received: {new_record.get('id')}")
                 
-                # Process message asynchronously
+                # Process message asynchronously without blocking (fire-and-forget)
+                # This allows the callback to return immediately and handle the next event
                 asyncio.create_task(message_processor.process_message(new_record))
                 
             except Exception as e:
                 logger.error(f"Error in on_message_insert callback: {e}", exc_info=True)
-        
         # Set up channel and subscribe to postgres changes
-        channel = supabase_async.realtime.channel("glovy-messages")
+        channel = supabase_async.realtime.channel("messages-realtime")
         await (
             channel
             .on_postgres_changes(

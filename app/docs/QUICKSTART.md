@@ -33,7 +33,7 @@ Create a `.env` file in the project root:
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_KEY=your-anon-key
 GOOGLE_API_KEY=sk-your-gemini-key
-GOOGLE_MODEL=gemini-1.5-flash
+GOOGLE_MODEL=gemini-2.5-flash
 ENVIRONMENT=development
 ```
 
@@ -133,7 +133,7 @@ GLOVY_MIN_MESSAGES_BEFORE_RESPONSE=5
 ```env
 GOOGLE_MODEL=gemini-1.0-pro  # Higher reasoning depth
 # or
-GOOGLE_MODEL=gemini-1.5-flash  # Faster, default
+GOOGLE_MODEL=gemini-2.5-flash  # Faster, default
 ```
 
 ## Support

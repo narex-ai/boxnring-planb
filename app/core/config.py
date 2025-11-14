@@ -15,7 +15,11 @@ class Settings(BaseSettings):
     
     # Gemini Configuration
     google_api_key: str
-    google_model: str = "gemini-1.5-flash"
+    google_model: str = "gemini-2.5-flash"
+    
+    # OpenAI Configuration (Optional - for testing)
+    openai_api_key: Optional[str] = None
+    openai_model: str = "gpt-4o-mini"  # Fast and cheap model for classification
     
     # Mem0 Configuration
     mem0_api_key: Optional[str] = None
@@ -24,7 +28,7 @@ class Settings(BaseSettings):
     glovy_persona: str = "glovy"
     glovy_response_threshold: float = 0.7  # Tone threshold for responding
     glovy_min_messages_before_response: int = 2
-    glovy_response_model: str = "gemini-1.5-flash"  # Model for response generation
+    glovy_response_model: str = "gemini-2.5-flash"  # Model for response generation
     
     # Environment
     environment: str = "development"

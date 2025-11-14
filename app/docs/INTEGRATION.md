@@ -207,7 +207,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key  # Optional, for admin operation
 
 # Google Gemini
 GOOGLE_API_KEY=sk-...
-GOOGLE_MODEL=gemini-1.5-flash
+GOOGLE_MODEL=gemini-2.5-flash
 
 # Mem0 (Optional)
 MEM0_API_KEY=your-mem0-key

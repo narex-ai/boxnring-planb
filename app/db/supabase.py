@@ -31,6 +31,17 @@ class SupabaseClient:
             logger.error(f"Error fetching match {match_id}: {e}")
             return None
     
+    def get_profile(self, profile_id: str) -> Optional[Dict[str, Any]]:
+        """Get profile details by ID."""
+        try:
+            response = self.client.table("profiles").select("*").eq("id", profile_id).execute()
+            if response.data:
+                return response.data[0]
+            return None
+        except Exception as e:
+            logger.error(f"Error fetching profile {profile_id}: {e}")
+            return None
+
     def get_profiles(self, profile_ids: List[str]) -> Dict[str, Dict[str, Any]]:
         """Get multiple profiles by IDs."""
         try:
@@ -41,22 +52,36 @@ class SupabaseClient:
             logger.error(f"Error fetching profiles: {e}")
             return {}
     
-    def get_recent_messages(self, match_id: str, limit: int = 20) -> List[Dict[str, Any]]:
-        """Get recent messages for a match."""
+    def get_recent_messages(
+        self,
+        match_id: str,
+        limit: int = 20,
+        exclude_sender_role: Optional[str] = None,
+        message_types: Optional[List[str]] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Get recent messages for a match.
+        If limit=0, return all messages for the match.
+        Optionally exclude messages from a sender_role (e.g., exclude_sender_role='Glovy').
+        Optionally filter by message_types (e.g., ['intro', 'feedback']).
+        """
         try:
-            response = (
-                self.client.table("messages")
-                .select("*")
-                .eq("match_id", match_id)
-                .order("created_at", desc=False)
-                .limit(limit)
-                .execute()
-            )
+            query = self.client.table("messages").select("*").eq("match_id", match_id)
+            
+            if exclude_sender_role:
+                query = query.neq("sender_role", exclude_sender_role)
+            if message_types is not None and len(message_types) > 0:
+                query = query.in_("message_type", message_types)
+            
+            query = query.order("created_at", desc=False)
+            if limit and limit > 0:
+                query = query.limit(limit)
+            
+            response = query.execute()
             return response.data
         except Exception as e:
             logger.error(f"Error fetching messages for match {match_id}: {e}")
             return []
-    
     def insert_message(
         self,
         match_id: str,
