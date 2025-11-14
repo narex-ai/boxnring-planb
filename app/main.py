@@ -1,6 +1,10 @@
 """
 FastAPI application for Glovy AI Agent backend.
 """
+import warnings
+# Suppress websockets deprecation warnings from Supabase realtime library
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="websockets")
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -92,7 +96,8 @@ async def setup_realtime_subscription(
     except Exception as e:
         logger.error(f"Error setting up realtime subscription: {e}", exc_info=True)
         app.state.running = False
-        raise
+        # Don't raise - let the monitor handle reconnection
+        return None
 
 
 async def monitor_and_reconnect(app: FastAPI, message_processor: MessageProcessor):
@@ -112,8 +117,8 @@ async def monitor_and_reconnect(app: FastAPI, message_processor: MessageProcesso
                     if app.state.subscription:
                         try:
                             await app.state.subscription.unsubscribe()
-                        except:
-                            pass
+                        except Exception as unsub_error:
+                            logger.debug(f"Error unsubscribing old channel: {unsub_error}")
                     
                     # Recreate async client
                     supabase_async: AsyncClient = await acreate_client(
@@ -139,15 +144,22 @@ async def monitor_and_reconnect(app: FastAPI, message_processor: MessageProcesso
                     logger.info(f"Will retry reconnection in {reconnect_delay} seconds")
                     await asyncio.sleep(reconnect_delay)
             
-            # Check connection state by verifying channel exists and is subscribed
+            # Check connection state - try to verify channel is still active
             elif app.state.subscription:
                 try:
-                    # Try to check channel state - if it fails, connection is likely dead
-                    # The realtime client doesn't expose a direct "is_connected" method,
-                    # so we rely on the running flag and periodic reconnection attempts
-                    pass  # Connection check happens via the running flag
+                    # Check if we can access the channel state
+                    # If the channel has a socket, check if it's closed
+                    if hasattr(app.state.subscription, 'socket'):
+                        socket = app.state.subscription.socket
+                        if socket and hasattr(socket, 'closed') and socket.closed:
+                            logger.warning("WebSocket socket is closed, marking for reconnection")
+                            app.state.running = False
+                except AttributeError:
+                    # Channel might not have socket attribute, that's okay
+                    pass
                 except Exception as e:
                     logger.warning(f"Error checking connection state: {e}")
+                    # Mark for reconnection on any error checking state
                     app.state.running = False
                     
         except asyncio.CancelledError:

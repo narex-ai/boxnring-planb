@@ -32,7 +32,7 @@ async def visitor():
             temperature=0.8,
             top_p = 1.0,
             tpp_k=50,
-            max_tokens=756
+            max_tokens=512
         )
         
         # Create the prompt

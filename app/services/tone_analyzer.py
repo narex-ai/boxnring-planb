@@ -55,11 +55,9 @@ class ToneAnalyzer:
             HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
         }
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash-lite",
+            model="gemini-2.5-flash",
             temperature=0.1,  # Lower temperature for more consistent classification     
-            google_api_key=settings.google_api_key,
-            api_key=settings.google_api_key,
-            max_tokens=1024
+            google_api_key=settings.google_api_key
         )
         
         self.prompt_template = ChatPromptTemplate.from_messages([
@@ -113,12 +111,12 @@ class ToneAnalyzer:
             
             # Invoke LLM 
             response = self.llm.invoke(prompt)
-            structured_llm = self.llm.with_structured_output(TriggerClassification)
-            response_object = structured_llm.invoke(prompt)
+            # structured_llm = self.llm.with_structured_output(TriggerClassification)
+            # response_object = structured_llm.invoke(prompt)
             print("______________________________________")
             print(response)
             print("______________________________________")
-            print(response_object)
+            # print(response_object)
             print("______________________________________")
             # trigger = self._extract_trigger(response.content)
 
