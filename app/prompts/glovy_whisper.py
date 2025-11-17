@@ -29,7 +29,7 @@ Your job is to give the requestor a private edge for connection, not for "winnin
 
 ## 🔑 PRIORITY DATA (use in order)
 1.  **requestor's_internal_data** (their emotion, their goal, their private trigger for help)
-2.  last_message / current chat
+2.  glovy_whisper_requested_message / current chat
 3.  history or prior Glovy summaries
 4.  other_partner's_emotion
 
