@@ -9,6 +9,7 @@ from typing import Dict, List, Optional, Any
 from app.core.config import settings
 from app.db.supabase import SupabaseClient
 from app.services.response_templates import ResponseTemplates
+from app.prompts import glovy_whisper, glovy_message
 import logging
 import time
 
@@ -31,10 +32,10 @@ class GlovyAgent:
         # Use faster model for response generation to meet latency requirements
         model = getattr(settings, 'glovy_response_model', getattr(settings, 'google_model', 'gemini-2.5-flash'))
         self.llm = ChatGoogleGenerativeAI(
-            model=model,
+            model="gemini-2.5-flash-lite",
             temperature=0.8,  # Higher temperature for more creative/witty responses
             google_api_key=settings.google_api_key,
-            max_output_tokens=150  # Limit tokens for faster response (≤2 sentences)
+            max_tokens=5120
         )
         
         # Initialize Mem0 for long-term memory
@@ -56,73 +57,9 @@ class GlovyAgent:
     
     def _build_persona_prompt(self):
         """Build Glovy's persona and system prompt based on design specifications."""
-        self.system_prompt = """You are Glovy, a neutral, in-both-corners relationship coach and AI referee.
-
-IDENTITY:
-- Name: Glovy
-- Role: Neutral relationship coach facilitating "spars" (conversations) in the "Ring"
-- Disclaimer: "I'm your coach, not a therapist. If serious issues arise or you feel unsafe, pause and consider professional help."
-
-STYLE:
-- Tone: Warm, succinct, constructive, humorous, witty (in the style of Elon Gold's couples comedy)
-- Language: Humorable, funny, concrete and actionable
-- Length: ≤2 sentences for nudges, keep it brief
-- Never take sides; target the problem, not the people
-
-TERMINOLOGY:
-- Session: "spar" or "match" (NOT "fight")
-- Space: "Ring" (where partners enter to have conversations)
-- Roles: Initiator (creating a spar) and Invitee (invited to spar)
-
-GROUND RULES:
-- "Speak for yourself; no name-calling."
-- "One person at a time; assume good intent."
-
-BEHAVIORS & INTERVENTIONS:
-
-1. INTERRUPTION:
-   - Broadcast: "Let's pause so they can finish—your turn is next."
-   - Whisper to interrupter: "Jot your point; mirror first, then add it."
-
-2. CONTEMPT/INSULT:
-   - Broadcast: "Flag on tone—try a respectful rephrase."
-   - Whisper to offender: "Name impact, not insult. e.g., 'I felt anxious about the purchase.'"
-
-3. STONEWALLING/WITHDRAWAL:
-   - Broadcast: "I'm sensing withdrawal. Want a brief breather, or restate the last point?"
-
-4. POSITIVE BEHAVIOR:
-   - Broadcast: "Clear mirroring—nice. Keep that up."
-   - Celebrate wins with humor: "BEAUTIFUL! Did you see that? An actual 'I feel' statement!"
-
-5. ESCALATION:
-   - Low: "Slow down—one at a time."
-   - Moderate: "Let's try a 10-second reset breath together."
-   - Severe: "Time-out recommended. Pause and return when ready."
-
-HUMOR STYLE (Elon Gold inspired):
-- Observational and self-aware
-- Never mean-spirited
-- Defuses tension with wit
-- Uses relationship metaphors (boxing/ring terminology)
-- Examples: "That's like watching NASCAR but with feelings", "It's like relationship Groundhog Day!"
-
-PHILOSOPHIES:
-- "You're not fighting each other, you're fighting the problem."
-- "In the relationship ring, there are no knockouts—only knock-togethers."
-- "Every champion couple has been on the ropes. The difference is they learned to fight together."
-
-RESPONSE GUIDELINES:
-- Keep responses ≤2 sentences for nudges
-- Be concrete and actionable
-- Use humor to lighten tense moments
-- Match the energy but guide it constructively
-- Never diagnose or moralize
-- Use "team vs. the problem" framing
-- Prefer short, plain sentences"""
         
         self.prompt_template = ChatPromptTemplate.from_messages([
-            ("system", self.system_prompt),
+            ("system", glovy_message.SYSTEM_PROMPT),
             MessagesPlaceholder(variable_name="chat_history"),
             ("human", "{input}")
         ])
@@ -292,3 +229,133 @@ RESPONSE GUIDELINES:
             return None
 
 
+    def generate_message(
+        self,
+        match: Dict[str, Any],
+        initiator: Dict[str, Any],
+        invitee: Dict[str, Any],
+        recent_messages: List[Dict[str, Any]],
+        new_message: Dict[str, Any],
+        trigger: str
+    ) -> str:
+        """
+        Generate Glovy's response to the current message.
+        Optimized for low latency: uses templates when possible, LLM when needed.
+        
+        Args:
+            match: Match dictionary with subject, metadata, etc.
+            initiator: Initiator profile dictionary
+            invitee: Invitee profile dictionary
+            recent_messages: List of recent conversation messages
+            new_message: The new message to analyze
+            trigger: The Glovy Trigger
+        Returns:
+            Glovy Broadcast Message as string
+        """
+        start_time = time.time()
+        
+        try:
+            # Extract metadata
+            match_metadata = match.get("metadata", {})
+            initiator_metadata = match_metadata.get("initiator", [])
+            invitee_metadata = match_metadata.get("invitee", [])
+            
+            # Build human message
+            human_message = glovy_message.build_human_message(
+                initiator_name=initiator.get("full_name", "Initiator"),
+                invitee_name=invitee.get("full_name", "Invitee"),
+                match_subject=match.get("subject", ""),
+                initiator_metadata=initiator_metadata,
+                invitee_metadata=invitee_metadata,
+                recent_messages=recent_messages,
+                new_message=new_message,
+                initiator_id=match.get("initiator_id"),
+                invitee_id=match.get("invitee_id"),
+                trigger=trigger
+            )
+            # Create prompt
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", glovy_message.SYSTEM_PROMPT),
+                ("human", "{message}")
+            ]).format_messages(message=human_message)
+            # Invoke LLM 
+            response = self.llm.invoke(prompt)
+
+            print("______________________________________")
+            print(response)
+            print("______________________________________")
+
+            elapsed = time.time() - start_time
+            logger.info(f"Glovy Message generated in {elapsed:.2f}s: message={response.content}")
+            
+            # return glovy message
+            return response.content
+            
+        except Exception as e:
+            logger.error(f"Error glovy message: {e}", exc_info=True)
+            # Return None on error
+            return None
+
+    def generate_whisper(
+        self,
+        match: Dict[str, Any],
+        initiator: Dict[str, Any],
+        invitee: Dict[str, Any],
+        recent_messages: List[Dict[str, Any]],
+        new_message: Dict[str, Any]
+    ) -> str:
+        """
+        Generate Glovy's whisper to the current message.
+        Optimized for low latency: uses templates when possible, LLM when needed.
+        
+        Args:
+            match: Match dictionary with subject, metadata, etc.
+            initiator: Initiator profile dictionary
+            invitee: Invitee profile dictionary
+            recent_messages: List of recent conversation messages
+            new_message: The new message to analyze
+        Returns:
+            Glovy Whisper Message as string
+        """
+        start_time = time.time()
+        
+        try:
+            # Extract metadata
+            match_metadata = match.get("metadata", {})
+            initiator_metadata = match_metadata.get("initiator", [])
+            invitee_metadata = match_metadata.get("invitee", [])
+            
+            # Build human message
+            human_message = glovy_whisper.build_human_message(
+                initiator_name=initiator.get("full_name", "Initiator"),
+                invitee_name=invitee.get("full_name", "Invitee"),
+                match_subject=match.get("subject", ""),
+                initiator_metadata=initiator_metadata,
+                invitee_metadata=invitee_metadata,
+                recent_messages=recent_messages,
+                new_message=new_message,
+                initiator_id=match.get("initiator_id"),
+                invitee_id=match.get("invitee_id"),
+            )
+            # Create prompt
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", glovy_whisper.SYSTEM_PROMPT),
+                ("human", "{message}")
+            ]).format_messages(message=human_message)
+            # Invoke LLM 
+            response = self.llm.invoke(prompt)
+
+            print("______________________________________")
+            print(response)
+            print("______________________________________")
+
+            elapsed = time.time() - start_time
+            logger.info(f"Glovy Whisper generated in {elapsed:.2f}s: message={response.content}")
+            
+            # return glovy message
+            return response.content
+            
+        except Exception as e:
+            logger.error(f"Error glovy message: {e}", exc_info=True)
+            # Return None on error
+            return None

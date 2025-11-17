@@ -55,9 +55,10 @@ class ToneAnalyzer:
             HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
         }
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash",
+            model="gemini-2.5-flash-lite",
             temperature=0.1,  # Lower temperature for more consistent classification     
-            google_api_key=settings.google_api_key
+            google_api_key=settings.google_api_key,
+            max_tokens=6400
         )
         
         self.prompt_template = ChatPromptTemplate.from_messages([
@@ -116,15 +117,13 @@ class ToneAnalyzer:
             print("______________________________________")
             print(response)
             print("______________________________________")
-            # print(response_object)
-            print("______________________________________")
-            # trigger = self._extract_trigger(response.content)
+            trigger = self._extract_trigger(response.content)
 
             elapsed = time.time() - start_time
-            # logger.info(f"Tone analysis completed in {elapsed:.2f}s: trigger={trigger}")
+            logger.info(f"Tone analysis completed in {elapsed:.2f}s: trigger={trigger}")
             
             # return trigger
-            return "silent"
+            return trigger
             
         except Exception as e:
             logger.error(f"Error analyzing tone: {e}", exc_info=True)

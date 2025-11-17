@@ -1,7 +1,6 @@
 """
 Invitee Onboarding endpoint.
 """
-from ast import List
 from fastapi import APIRouter, HTTPException
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import ChatPromptTemplate
@@ -10,8 +9,6 @@ from app.api.v1.dependencies import get_invitee_onboarding, _format_respond
 from app.prompts.onboarding_question import SYSTEM_PROMPT, build_human_message
 
 import logging
-import random
-from typing import List
 
 
 logger = logging.getLogger(__name__)
@@ -64,56 +61,3 @@ async def invitee():
     except Exception as e:
         logger.error(f"Error in invitee onboarding: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error calling Gemini: {str(e)}")
-    output = []
-    arr = llm_output.split("\n")
-    # Filter out empty strings from splitting
-    arr = [line.strip() for line in arr if line.strip()]
-    
-    if len(arr) == len(template) * 2:
-        dynamic = [
-            {
-                "question": arr[i],
-                "whisper": arr[i + 1]
-            }
-            for i in range(0, len(arr), 2)
-        ]
-    elif len(arr) == len(template):
-        dynamic = [
-            {
-                "question": arr[i],
-                "whisper": template[i]['whisper']
-            }
-            for i in range(0, len(arr))
-        ]
-    else:
-        # Handle unexpected output format
-        logger.warning(
-            f"Unexpected LLM output format. Expected {len(template)} or {len(template) * 2} lines, "
-            f"got {len(arr)}. Using first {min(len(arr), len(template))} items as questions."
-        )
-        # Use available items, pad with template values if needed
-        dynamic = []
-        for i in range(len(template)):
-            dynamic.append({
-                "question": template[i].get('question', ''),
-                "whisper": template[i].get('whisper', '')
-            })
-
-    animations = ["thinking", "nod", "celebration", "sad", "idle"]
-
-    for index, item in enumerate(template):
-
-        # Same logic as JS
-        if item.get("interaction_pattern") == "complex":
-            item["custom_input"] = True
-
-        item["question_number"] = index + 1
-        item["glovy_animation"] = animations[random.randint(0, 4)]
-
-        item["question"] = dynamic[index]["question"]
-        item["whisper"] = dynamic[index]["whisper"]
-
-        output.append(item)
-
-    # Final output
-    return output

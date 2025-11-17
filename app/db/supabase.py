@@ -73,7 +73,7 @@ class SupabaseClient:
             if message_types is not None and len(message_types) > 0:
                 query = query.in_("message_type", message_types)
             
-            query = query.order("created_at", desc=False)
+            query = query.order("created_at", desc=True)
             if limit and limit > 0:
                 query = query.limit(limit)
             

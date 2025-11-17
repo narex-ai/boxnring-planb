@@ -87,7 +87,7 @@ Example: "I understand," "That makes sense," "Thank you for saying that," "I app
 
 ## Default State: Silent (Strengthened)
 **silent**
-When: None of the above triggers are met. The conversation is neutral, productive, or simply in progress. The threshold for intervention is now higher for the negative triggers, meaning a wider range of mild frustration or disagreement will result in silent output.
+When: None of the above triggers are met.
 """
 
 
@@ -138,6 +138,7 @@ def build_human_message(
     # Build recent conversation history
     conversation_history = ""
     if recent_messages:
+        recent_messages.reverse()
         for msg in recent_messages:
             sender_id = msg.get("sender_id")
             body = msg.get("body", "")

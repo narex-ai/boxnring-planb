@@ -1,7 +1,6 @@
 """
 Visitor Onboarding endpoint.
 """
-from ast import List
 from fastapi import APIRouter, HTTPException
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import ChatPromptTemplate
@@ -10,8 +9,6 @@ from app.api.v1.dependencies import get_visitor_onboarding, _format_respond
 from app.prompts.onboarding_question import SYSTEM_PROMPT, build_human_message
 
 import logging
-import random
-from typing import List
 
 logger = logging.getLogger(__name__)
 
