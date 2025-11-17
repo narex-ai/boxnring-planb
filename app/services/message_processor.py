@@ -1,7 +1,6 @@
 """
 Main message processing pipeline for handling incoming messages and generating Glovy responses.
 """
-from tkinter.constants import FALSE
 from typing import Dict, Any, Optional
 from app.db.supabase import SupabaseClient
 from app.services.tone_analyzer import ToneAnalyzer
