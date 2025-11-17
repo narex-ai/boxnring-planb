@@ -254,7 +254,7 @@ async def monitor_and_reconnect(app: FastAPI, message_processor: MessageProcesso
                         if hasattr(app.state.supabase_async, 'realtime'):
                             realtime = app.state.supabase_async.realtime
                             if hasattr(realtime, 'is_connected'):
-                                if not realtime.is_connected():
+                                if not realtime.is_connected:
                                     logger.warning("Realtime client reports disconnected, reconnecting...")
                                     await reconnect_realtime(app, message_processor, "realtime client disconnected")
                                     continue
