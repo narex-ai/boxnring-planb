@@ -85,7 +85,8 @@ async def process_message_manual(
             raise HTTPException(status_code=404, detail="Initiator or invitee not found")
         recent_messages = supabase_client.get_recent_messages(
             request.match_id, 
-            limit=20
+            limit=20,
+            is_whisper=False
         )
         
         llm = ChatGoogleGenerativeAI(

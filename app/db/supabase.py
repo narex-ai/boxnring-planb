@@ -57,13 +57,15 @@ class SupabaseClient:
         match_id: str,
         limit: int = 20,
         exclude_sender_role: Optional[str] = None,
-        message_types: Optional[List[str]] = None
+        message_types: Optional[List[str]] = None,
+        is_whisper: Optional[bool] = None
     ) -> List[Dict[str, Any]]:
         """
         Get recent messages for a match.
         If limit=0, return all messages for the match.
         Optionally exclude messages from a sender_role (e.g., exclude_sender_role='Glovy').
         Optionally filter by message_types (e.g., ['intro', 'feedback']).
+        Optionally filter by is_whisper (if None, don't filter; if True/False, filter by that value).
         """
         try:
             query = self.client.table("messages").select("*").eq("match_id", match_id)
@@ -72,6 +74,8 @@ class SupabaseClient:
                 query = query.neq("sender_role", exclude_sender_role)
             if message_types is not None and len(message_types) > 0:
                 query = query.in_("message_type", message_types)
+            if is_whisper is not None:
+                query = query.eq("is_whisper", is_whisper)
             
             query = query.order("created_at", desc=True)
             if limit and limit > 0:

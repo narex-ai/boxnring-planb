@@ -122,6 +122,8 @@ This is the Invitee's Perspect for this spar.
 
 Conversation History:
 {formatted_history}
+
+Now recommend 4 different ways for {initiator_name if sender_role=="A" else invitee_name} to respond to {initiator_name if sender_role=="B" else invitee_name} based on the conversation history.
 """ 
 
     return prompt.strip()
