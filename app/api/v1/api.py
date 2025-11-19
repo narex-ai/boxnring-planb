@@ -15,6 +15,7 @@ onboarding_router.include_router(onboarding.initiator.router)
 onboarding_router.include_router(onboarding.invitee.router)
 onboarding_router.include_router(onboarding.visitor.router)
 onboarding_router.include_router(onboarding.partner.router)
+onboarding_router.include_router(onboarding.feedback.router)
 
 api_router.include_router(onboarding_router)
 

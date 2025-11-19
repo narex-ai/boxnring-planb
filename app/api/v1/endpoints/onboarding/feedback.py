@@ -1,11 +1,11 @@
 """
-Invitee Onboarding endpoint.
+Feedback endpoint.
 """
 from fastapi import APIRouter, HTTPException
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import ChatPromptTemplate
 from app.core.config import settings
-from app.api.v1.dependencies import get_invitee_onboarding, _format_respond
+from app.api.v1.dependencies import get_feedback_onboarding, _format_respond
 from app.prompts.onboarding_question import SYSTEM_PROMPT, build_human_message
 
 import logging
@@ -15,10 +15,10 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-@router.get("/invitee")
-async def invitee():
+@router.get("/feedback")
+async def feedback():
     """
-    GET endpoint for spar invitee onboarding that calls Gemini with a specific prompt
+    GET endpoint for spar feedback that calls Gemini with a specific prompt
     and returns template data.
     """
     try:
@@ -39,7 +39,7 @@ async def invitee():
             ("human", "{message}")
         ])
     
-        template = get_invitee_onboarding()
+        template = get_feedback_onboarding()
         human_message = build_human_message(template)
         prompt = prompt_template.format_messages(message = human_message)
         
@@ -50,14 +50,14 @@ async def invitee():
         response_text = response.content if hasattr(response, 'content') else str(response)
         respond_body = _format_respond(llm_output= response_text, template= template)
 
-        logger.info("Spar Invitee onboarding Gemini call completed successfully")
+        logger.info("Spar Feedback Gemini call completed successfully")
         
         return {
             "status": "success",
-            "message": "Spar Invitee onboarding completed successfully",
+            "message": "Spar Feedback completed successfully",
             "body": respond_body
         }
         
     except Exception as e:
-        logger.error(f"Error in invitee onboarding: {e}", exc_info=True)
+        logger.error(f"Error in feedback: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error calling Gemini: {str(e)}")

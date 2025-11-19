@@ -27,7 +27,7 @@ async def partner():
         llm = ChatGoogleGenerativeAI(
             model="gemini-2.5-flash-lite",
             google_api_key=settings.google_api_key,
-            temperature=0.8,
+            temperature=0.9,
             top_p = 1.0,
             tpp_k=50,
             max_tokens=512

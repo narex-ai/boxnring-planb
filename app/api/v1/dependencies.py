@@ -258,6 +258,148 @@ def get_invitee_onboarding() -> List[Dict[str, Any]]:
     # Return or print template
     return template
 
+def get_feedback_onboarding() -> List[Dict[str, Any]]:
+    """
+    Generate template data for spar feedback onboarding.
+    """
+    template = [
+    {
+        "question": "How are you feeling now after this Spar?",
+        "choices": random.choice([
+            [
+                { "label": "Great — feeling positive and connected", "icon": "Heart", "value": "great" },
+                { "label": "Good — things went well overall", "icon": "Smile", "value": "good" },
+                { "label": "Neutral — mixed feelings about the discussion", "icon": "Wind", "value": "neutral" },
+                { "label": "Difficult — challenging but manageable", "icon": "Frown", "value": "difficult" },
+                { "label": "Overwhelmed — feeling emotionally drained", "icon": "AlertTriangle", "value": "overwhelmed" }
+            ],
+            [
+                { "label": "Uplifted — that felt really good", "icon": "Heart", "value": "uplifted" },
+                { "label": "Pretty okay — overall positive vibes", "icon": "Smile", "value": "okay" },
+                { "label": "In-between — not sure how to feel yet", "icon": "Circle", "value": "mixed" },
+                { "label": "Drained — it took some effort", "icon": "CloudRain", "value": "drained" },
+                { "label": "Worn out — emotionally exhausted", "icon": "BatteryLow", "value": "exhausted" }
+            ],
+            [
+                { "label": "Really good — feeling close and understood", "icon": "Heart", "value": "really_good" },
+                { "label": "Pretty solid — that went better than expected", "icon": "ThumbsUp", "value": "solid" },
+                { "label": "Unsure — still processing everything", "icon": "HelpCircle", "value": "unsure" },
+                { "label": "Tough — it wasn’t easy to get through", "icon": "Cloud", "value": "tough" },
+                { "label": "Wiped out — emotionally tapped out", "icon": "ZapOff", "value": "wiped_out" }
+            ],
+            [
+                { "label": "Encouraged — that felt meaningful", "icon": "Sparkles", "value": "encouraged" },
+                { "label": "Pretty calm — things seemed steady", "icon": "Smile", "value": "calm" },
+                { "label": "Unsettled — still mixed on how it went", "icon": "Eye", "value": "unsettled" },
+                { "label": "Heavy — that conversation weighed on me", "icon": "Meh", "value": "heavy" },
+                { "label": "Overloaded — too much to take in at once", "icon": "Gauge", "value": "overloaded" }
+            ],
+        ]),
+        "whisper": "Take a moment to reflect on how that discussion went 💭",
+        "interaction_pattern": "simple",
+        "question_id": "feedback_emotion",
+    },
+    {
+        "question": "Did you achieve your goals?",
+        "choices": _shuffle(random.choice([
+            [
+                {
+                "label": "Communicate more openly",
+                "icon": "MessageCircle",
+                "value": "open_communication"
+                },
+                {
+                "label": "Understand each other better — saw their perspective",
+                "icon": "Eye",
+                "value": "understand_perspectives"
+                },
+                {
+                "label": "Resolve this conflict — reached common ground",
+                "icon": "Handshake",
+                "value": "resolve_conflict"
+                },
+                {
+                "label": "Build trust — strengthened our foundation",
+                "icon": "Shield",
+                "value": "build_trust"
+                }
+            ],
+            [
+                {
+                "label": "Shared feelings without fear",
+                "icon": "MessageCircle",
+                "value": "open_communication"
+                },
+                {
+                "label": "Saw our perspective",
+                "icon": "Eye",
+                "value": "understand_perspectives"
+                },
+                {
+                "label": "Reached common ground",
+                "icon": "Handshake",
+                "value": "resolve_conflict"
+                },
+                {
+                "label": "Strengthened our foundation",
+                "icon": "Shield",
+                "value": "build_trust"
+                }
+            ],
+            [
+                {
+                "label": "Spoke honestly",
+                "icon": "MessageSquare",
+                "value": "honest_sharing"
+                },
+                {
+                "label": "Gained clarity",
+                "icon": "Eye",
+                "value": "gained_clarity"
+                },
+                {
+                "label": "Made progress",
+                "icon": "CheckCircle",
+                "value": "made_progress"
+                },
+                {
+                "label": "Strengthened trust",
+                "icon": "HeartHandshake",
+                "value": "strengthened_trust"
+                }
+            ],
+            [
+                {
+                "label": "Felt safe sharing",
+                "icon": "MessageSquare",
+                "value": "honest_sharing"
+                },
+                {
+                "label": "Understood each other better",
+                "icon": "Eye",
+                "value": "gained_clarity"
+                },
+                {
+                "label": "Moved closer to a resolution",
+                "icon": "CheckCircle",
+                "value": "made_progress"
+                },
+                {
+                "label": "Felt more connected",
+                "icon": "HeartHandshake",
+                "value": "strengthened_trust"
+                }
+            ],
+        ])),
+        "whisper": "Think about what changed after the conversation 💭",
+        "interaction_pattern": "complex",
+        "question_number": 2,
+        "question_id": "goal_achievement",
+        },
+    ]
+    # Return or print template
+    return template
+
 
 def get_visitor_onboarding() -> List[Dict[str, Any]]:
 
