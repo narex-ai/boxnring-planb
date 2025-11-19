@@ -133,7 +133,10 @@ async def setup_realtime_subscription(
                 if new_record.get("sender_role") == "Glovy":
                     logger.debug("Skipping Glovy's own message")
                     return
-            
+
+                if new_record.get("sender_role") == "SYSTEM" and new_record.get("message_type") == "notification":
+                    logger.debug("Skipping system notification message")
+                    return
                 
                 logger.info(f"New message received: {new_record.get('id')}")
                 if new_record.get("is_whisper") == True:
