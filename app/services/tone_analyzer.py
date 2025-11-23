@@ -5,7 +5,6 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import ChatPromptTemplate
 from typing import Dict, Any, List, Literal
 from pydantic import BaseModel, Field
-from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from app.core.config import settings
 from app.prompts.tone_analyzer import SYSTEM_PROMPT, build_human_message
 import logging
@@ -48,12 +47,6 @@ class ToneAnalyzer:
         model = getattr(settings, "google_model", "gemini-2.5-flash")
         # Define settings to be less restrictive
         # This tells the API "Do not block content for these reasons"
-        safety_settings = {
-            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-        }
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-2.5-flash-lite",
             temperature=0.1,  # Lower temperature for more consistent classification     
@@ -112,11 +105,7 @@ class ToneAnalyzer:
             
             # Invoke LLM 
             response = self.llm.invoke(prompt)
-            # structured_llm = self.llm.with_structured_output(TriggerClassification)
-            # response_object = structured_llm.invoke(prompt)
-            print("______________________________________")
-            print(response)
-            print("______________________________________")
+
             trigger = self._extract_trigger(response.content)
 
             elapsed = time.time() - start_time

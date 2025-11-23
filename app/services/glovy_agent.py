@@ -281,9 +281,6 @@ class GlovyAgent:
             # Invoke LLM 
             response = self.llm.invoke(prompt)
 
-            print("______________________________________")
-            print(response)
-            print("______________________________________")
 
             elapsed = time.time() - start_time
             logger.info(f"Glovy Message generated in {elapsed:.2f}s: message={response.content}")
@@ -344,10 +341,6 @@ class GlovyAgent:
             ]).format_messages(message=human_message)
             # Invoke LLM 
             response = self.llm.invoke(prompt)
-
-            print("______________________________________")
-            print(response)
-            print("______________________________________")
 
             elapsed = time.time() - start_time
             logger.info(f"Glovy Whisper generated in {elapsed:.2f}s: message={response.content}")
