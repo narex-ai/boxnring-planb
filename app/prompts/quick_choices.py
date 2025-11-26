@@ -43,8 +43,9 @@ Return a JSON array of 4 messages. **This is the *only* output allowed.**
 -   **No generic, one-size-fits-all replies.** All replies must be contextual.
 -   No meta commentary or explanation of the choices.
 -   Do not use the partners' names.
--   No prefix (e.g., "Glovy:", "-").
--   **Only return the array of 4 strings.**
+-   No dashbullet points or numbered lists like -, 1, etc
+-   No prefix like "Initiator:" or "Invitee:" or "Glovy:" or any other label.
+-   **Only return the json array of 4 strings.** like ["","","",""]
 -   Do not use a semicolon (;) as a separator.
 -   Do not include ```json or ``` in the final output.
 -   Every message must be a complete sentence and under 10 words.

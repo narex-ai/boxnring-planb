@@ -14,8 +14,102 @@ from app.api.v1.dependencies import get_app_state
 
 import logging
 import json
+import re
 
 logger = logging.getLogger(__name__)
+
+def extract_choices_from_response(content: str) -> List[str]:
+    """
+    Extract 4 choice messages from LLM response, handling various formats:
+    - JSON array: ["msg1", "msg2", "msg3", "msg4"]
+    - JSON with markdown code blocks
+    - Plain text with 4 sentences (newlines, numbered lists, bullets, etc.)
+    
+    Args:
+        content: Raw response content from LLM
+        
+    Returns:
+        List of 4 choice strings
+    """
+    if not content:
+        return []
+    
+    # Step 1: Try to extract and parse as JSON
+    try:
+        cleaned = content.strip()
+        # Remove markdown code block markers if present
+        cleaned = re.sub(r'^```json\s*', '', cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r'^```\s*', '', cleaned)
+        cleaned = re.sub(r'\s*```$', '', cleaned)
+        cleaned = cleaned.strip()
+        
+        # Try to parse as JSON
+        parsed = json.loads(cleaned)
+        if isinstance(parsed, list) and len(parsed) > 0:
+            # Ensure we have exactly 4 items, pad or truncate if needed
+            choices = [str(item).strip() for item in parsed[:4]]
+            while len(choices) < 4:
+                choices.append("")
+            return choices[:4]
+    except (json.JSONDecodeError, ValueError, AttributeError):
+        pass
+    
+    # Step 2: Try to extract JSON array from text (might be embedded)
+    try:
+        # Look for JSON array pattern in the text
+        json_match = re.search(r'\[.*?\]', content, re.DOTALL)
+        if json_match:
+            parsed = json.loads(json_match.group())
+            if isinstance(parsed, list) and len(parsed) > 0:
+                choices = [str(item).strip() for item in parsed[:4]]
+                while len(choices) < 4:
+                    choices.append("")
+                return choices[:4]
+    except (json.JSONDecodeError, ValueError):
+        pass
+    
+    # Step 3: Extract plain text sentences/messages
+    # Remove markdown code blocks
+    cleaned = content.strip()
+    cleaned = re.sub(r'^```[a-z]*\s*', '', cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'\s*```$', '', cleaned)
+    cleaned = cleaned.strip()
+    
+    # Split by various delimiters and extract sentences
+    lines = []
+    
+    # Try splitting by newlines first
+    for line in cleaned.split('\n'):
+        line = line.strip()
+        if not line:
+            continue
+        # Remove common prefixes (numbers, bullets, dashes, etc.)
+        line = re.sub(r'^[\d\.\)\-\*\•]\s*', '', line)
+        # Remove quotes if present
+        line = re.sub(r'^["\']|["\']$', '', line)
+        line = line.strip()
+        if line and len(line) > 3:  # Filter out very short lines
+            lines.append(line)
+    
+    # If we got lines from newline splitting, use them
+    if lines:
+        choices = lines[:4]
+        while len(choices) < 4:
+            choices.append("")
+        return choices[:4]
+    
+    # Try splitting by periods followed by space (sentence boundaries)
+    sentences = re.split(r'\.\s+', cleaned)
+    sentences = [s.strip() for s in sentences if s.strip() and len(s.strip()) > 3]
+    
+    if sentences:
+        choices = sentences[:4]
+        while len(choices) < 4:
+            choices.append("")
+        return choices[:4]
+    
+    # Fallback: return the whole content as a single choice (shouldn't happen)
+    return [cleaned[:100]] + [""] * 3
 
 router = APIRouter()
 
@@ -117,9 +211,16 @@ async def process_message_manual(
         ])
 
         response = llm.invoke(prompt.format_messages(message=human_message))
-
-        choices = json.loads(response.content)
-        return {"status": "success","data":choices}
+        # Extract choices from response (handles JSON, markdown, and plain text formats)
+        choices = extract_choices_from_response(response.content)
+        
+        # Ensure we always return exactly 4 choices
+        if len(choices) < 4:
+            choices.extend([""] * (4 - len(choices)))
+        elif len(choices) > 4:
+            choices = choices[:4]
+        
+        return {"status": "success", "data": choices}
         
     except Exception as e:
         logger.error(f"Error generating quick choices: {e}", exc_info=True)
